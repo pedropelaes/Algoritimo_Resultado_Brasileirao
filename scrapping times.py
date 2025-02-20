@@ -1,4 +1,6 @@
 import time
+import json
+from datetime import datetime 
 start_time = time.time()
 from playwright.sync_api import sync_playwright
 
@@ -32,26 +34,44 @@ with sync_playwright() as p:
         pag_time = context.new_page()
         pag_time.goto("https://www.sofascore.com" + link_times[q])
         
-        div_nota = pag_time.locator("xpath=//span[text()='Notas Sofascore']/ancestor::div[contains(@class, 'Box')]/following-sibling::div//span[@role='meter'][@aria-valuenow]")
-        nota_time = div_nota.first.text_content()
-        nota_time = float(nota_time)
+        #div_nota = pag_time.locator("xpath=//span[text()='Notas Sofascore']/ancestor::div[contains(@class, 'Box')]/following-sibling::div//span[@role='meter'][@aria-valuenow]")
+        #nota_time = div_nota.first.text_content()
+        #nota_time = float(nota_time)
         
         treinador_div = pag_time.locator('text=Treinador').locator('..')  
         link_tecnico = treinador_div.locator('a').get_attribute('href') 
         nome_tecnico = treinador_div.locator('a').inner_text()
-        data_times[q].extend([nome_tecnico, link_tecnico, nota_time])
+        data_times[q].extend([nome_tecnico, link_tecnico]) #, nota_time
         pag_time.close()
 
-
-    print("Links dos times:\n")
-    for i in link_times:
-        print(i)
-    print("--------------------")
-    print("Informação dos times:\nPos | Nome | Jogos | Vitorias | Empates | Derrotas\n")
-    for i in data_times:
-        print(i)
-
-    end_time = time.time()
-    print(f"Tempo de execução: {end_time - start_time:.2f} segundos")
     campeonato.close()
     browser.close()
+    #print("Links dos times:\n")
+
+    team_data = {}
+    team_links = {}
+    for i in link_times:
+        #print(i)
+        team_links[q] = link_times
+    #print("--------------------")
+    #print("Informação dos times:\nPos | Nome | Jogos | Vitorias | Empates | Derrotas\n")
+    for i in data_times:
+        #print(i)
+        team_data[q] = data_times
+
+
+    
+#formatação dos arquivos json
+data_atual = datetime.now().strftime("%Y-%m-%d")
+team_data_file = f"teams_data_{data_atual}.json"
+team_links_file = f"team_links_{data_atual}.json"
+
+#gera arquivos json contendo as informações e links de cada jogador de cada time do campeonato
+with open(team_data_file, "w", encoding="utf-8") as dados_times:
+    json.dump(team_data, dados_times, indent=4, ensure_ascii=False)
+with open(team_links_file, "w", encoding="utf-8") as links_times:
+    json.dump(team_links, links_times, indent=4, ensure_ascii=False)
+
+end_time = time.time()
+print(f"Tempo de execução: {end_time - start_time:.2f} segundos")
+print(f"Coleta de dados finalizada. Arquivos gerados: {team_data_file} | {team_links_file}")
