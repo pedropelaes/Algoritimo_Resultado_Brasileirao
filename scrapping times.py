@@ -13,7 +13,7 @@ with sync_playwright() as p:
     )
 
     campeonato = context.new_page()
-    campeonato.goto("https://www.sofascore.com/pt/torneio/futebol/brazil/brasileirao-serie-a/325#id:58766")
+    campeonato.goto("https://www.sofascore.com/pt/torneio/futebol/brazil/brasileirao-serie-a/325")
 
     times = campeonato.get_by_test_id("standings_row")
     
@@ -29,6 +29,9 @@ with sync_playwright() as p:
         info_times[i] = str(info_times[i]).split('\n', -1)
 
     data_times = [times[:5] for times in info_times] #limpa as informações desnecessárias, deixando apenas posição, nome, vitorias, empates e derrotas
+    
+    team_data = {}
+    team_links = {}
 
     for q in range(times.count()): #busca o nome e o link dos tenicos de cada time e adiciona na lista
         pag_time = context.new_page()
@@ -44,21 +47,25 @@ with sync_playwright() as p:
         data_times[q].extend([nome_tecnico, link_tecnico]) #, nota_time
         pag_time.close()
 
+        key = data_times[q][0]
+        #print("Links dos times:\n")
+        team_data[key] = {
+            "posicao": data_times[q][0],
+            "nome": data_times[q][1],
+            "vitorias": data_times[q][2],
+            "empates": data_times[q][3],
+            "derrotas": data_times[q][4],
+            "treinador": data_times[q][5],
+            "link_treinador": data_times[q][6],
+        }
+        team_links[key] = {
+            "link": link_times[q]
+        }
+    
+        
+
     campeonato.close()
     browser.close()
-    #print("Links dos times:\n")
-
-    team_data = {}
-    team_links = {}
-    for i in link_times:
-        #print(i)
-        team_links[q] = link_times
-    #print("--------------------")
-    #print("Informação dos times:\nPos | Nome | Jogos | Vitorias | Empates | Derrotas\n")
-    for i in data_times:
-        #print(i)
-        team_data[q] = data_times
-
 
     
 #formatação dos arquivos json

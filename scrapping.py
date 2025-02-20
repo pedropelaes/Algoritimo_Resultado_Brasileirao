@@ -8,12 +8,12 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=False, slow_mo=500, args=["--disable-popup-blocking", "--new-window"])
     
     context = browser.new_context(
-    locale="en-US",  
-    geolocation={"latitude": 38.71689, "longitude": -9.139705, "accuracy": 100}
+    locale="pt_br",  
+    geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}
     )
 
     page = context.new_page()
-    page.goto("https://www.sofascore.com/pt/torneio/futebol/brazil/brasileirao-serie-a/325#id:58766")
+    page.goto("https://www.sofascore.com/pt/torneio/futebol/brazil/brasileirao-serie-a/325")
 
     times = page.get_by_test_id("standings_row")
     print(f"Quantidade de times da liga:{times.count()}")
@@ -41,20 +41,26 @@ with sync_playwright() as p:
         linhas = tabela_jogadores.locator("tr")
 
         links = []
-        nomes_posicao = []
-        for i in range(linhas.count()):
+        jogadores = []
+        for i in range(1, linhas.count()):
             celulas = linhas.nth(i).locator('td')  # Cada célula da linha
             linha_dados = [celulas.nth(j).inner_text() for j in range(celulas.count())]
-            if(i != 0):
-                linha_dados[0] = linha_dados[0].split('\n', 1)[-1]
-                
-                link = celulas.nth(0).locator('a').get_attribute('href')
-                if link:
-                    links.append(link)
-            nomes_posicao.append(linha_dados)
             
-        for i in nomes_posicao:
-            player_data[t]=nomes_posicao
+            nome = linha_dados[0] = linha_dados[0].split('\n', 1)[-1] if len(linha_dados) > 0 else "Desconhecido"
+            posicao = linha_dados[1] if len(linha_dados) > 1 else "N/A"
+            idade = linha_dados[2] if len(linha_dados) > 2 else "N/A"
+            link = celulas.nth(0).locator('a').get_attribute('href')
+            if link:
+                links.append(link)
+                
+            jogadores.append({
+            "nome": nome,
+            "posicao": posicao,
+            "idade": idade
+        })
+            
+        for i in jogadores:
+            player_data[t] = jogadores
             #print(i)
         for i in links:
             player_links[t]=links
