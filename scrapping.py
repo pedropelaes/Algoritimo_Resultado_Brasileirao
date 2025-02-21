@@ -1,15 +1,17 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright; from playwright._impl._errors import TimeoutError
 import json
+import re
 from datetime import datetime 
 import time as tempo
 start_time = tempo.time()
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False, slow_mo=500, args=["--disable-popup-blocking", "--new-window"])
+    browser = p.chromium.launch(headless=False, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
     
     context = browser.new_context(
     locale="pt_br",  
-    geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}
+    geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100},
+    
     )
 
     page = context.new_page()
@@ -42,6 +44,7 @@ with sync_playwright() as p:
 
         links = []
         jogadores = []
+        #cartoes = []
         for i in range(1, linhas.count()):
             celulas = linhas.nth(i).locator('td')  # Cada célula da linha
             linha_dados = [celulas.nth(j).inner_text() for j in range(celulas.count())]
@@ -52,11 +55,45 @@ with sync_playwright() as p:
             link = celulas.nth(0).locator('a').get_attribute('href')
             if link:
                 links.append(link)
+            
+
+            #cartões de cada jogador
+            player_page = context.new_page()
+            player_page.goto("https://www.sofascore.com" + link)
+            #buscar a div dos cartões
+            try:
+                div_estatisticas = player_page.locator("span:has-text('Estatísticas do jogador')").locator("..").locator("..").locator("..")
+                span_cartoes = div_estatisticas.locator("span:has-text('Cartões')").first
+                if(span_cartoes.is_visible()):
+                    div_cartoes = span_cartoes.locator("..").locator("..")
+                    div_cartoes.inner_text()
+                
+
+                    #cartoes.append(div_cartoes.inner_text())
+                    n_cartoes = [int(n) for n in re.findall(r'\d+', div_cartoes.inner_text())]
+                    amarelos = n_cartoes[0] + n_cartoes[1]
+                    vermelhos = n_cartoes[2]  
+                    #consertar list index out of range
+                    
+                    #print(cartoes)
+                else:
+                    amarelos = "N/A"
+                    vermelhos = "N/A"
+
+            except TimeoutError:
+                amarelos = "N/A"
+                vermelhos = "N/A"
+
+            finally: 
+                player_page.close()
+
                 
             jogadores.append({
             "nome": nome,
             "posicao": posicao,
-            "idade": idade
+            "idade": idade,
+            "amarelos": amarelos,
+            "vermelhos": vermelhos
         })
             
         for i in jogadores:
