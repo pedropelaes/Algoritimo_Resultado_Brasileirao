@@ -71,9 +71,11 @@ with sync_playwright() as p:
 
                     #cartoes.append(div_cartoes.inner_text())
                     n_cartoes = [int(n) for n in re.findall(r'\d+', div_cartoes.inner_text())]
-                    amarelos = n_cartoes[0] + n_cartoes[1]
-                    vermelhos = n_cartoes[2]  
-                    #consertar list index out of range
+                    amarelos = n_cartoes[0] if len(n_cartoes) > 0 else "N/A"
+                    seg_amarelo = n_cartoes[1] if len(n_cartoes) > 1 else 0
+                    vermelhos = n_cartoes[2] if len(n_cartoes) > 2 else 0
+
+                    amarelos += seg_amarelo
                     
                     #print(cartoes)
                 else:
@@ -85,6 +87,8 @@ with sync_playwright() as p:
                 vermelhos = "N/A"
 
             finally: 
+                print(f"Jogador {link}:")
+                print(n_cartoes)
                 player_page.close()
 
                 
@@ -120,5 +124,6 @@ with open(player_links_file, "w", encoding="utf-8") as links_jogares:
 
 
 end_time = tempo.time()
-print(f"Tempo de execução: {end_time - start_time:.2f} segundos")
+tempo_execução = (end_time - start_time) / 60
+print(f"Tempo de execução: {tempo_execução:.2f} segundos")
 print(f"Coleta de dados finalizada. Arquivos gerados: {player_data_file} | {player_links_file}")
