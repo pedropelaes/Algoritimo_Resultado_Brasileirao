@@ -4,13 +4,18 @@ import json
 import re
 from datetime import datetime 
 import time as tempo
+import random
 start_time = tempo.time()
 
-async def get_players_cartoes_notas(context, link):
-    player_page = await context.new_page()
-    await player_page.goto("https://www.sofascore.com" + link)
+async def get_players_cartoes_notas(player_page, link):
+    await asyncio.sleep(random.uniform(2,5))
+    await player_page.goto("https://www.sofascore.com" + link, wait_until="load")
+    await player_page.set_extra_http_headers({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    })
+    print("Acessando", "https://www.sofascore.com" + link)
     #buscar a div da nota e dos cartões
-    data = []
+    data = {}
     try:
         div_player_summary = player_page.get_by_test_id("player_summary")
         if(await div_player_summary.is_visible()):
@@ -33,13 +38,19 @@ async def get_players_cartoes_notas(context, link):
         else:
             amarelos = "N/A"
             vermelhos = "N/A"
+
+        data["amarelos"] = amarelos
+        data["vermelhos"] = vermelhos
+        data["nota"] = nota
+
     except TimeoutError:
-        amarelos = "N/A"
-        vermelhos = "N/A"
-        nota = "N/A"
+        data["amarelos"] = "N/A"
+        data["vermelhos"] = "N/A"
+        data["nota"] = "N/A"
     finally:
         await player_page.close()
 
+    
     return data
         
 async def get_players(context):
@@ -91,22 +102,33 @@ async def get_players(context):
 
 async def main():
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
+        browser = await p.chromium.launch(headless=True, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
         context = await browser.new_context(
-            locale="pt_br",  
+            locale="jp_JP",  
             geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}, 
         )#may need to be changed to run properly because of timeout errors
         
         player_data = await get_players(context)
-        coleta = [get_players_cartoes_notas(context, link) for time_links in player_data[1].values() for link in time_links]
-        coleta_result = await asyncio.gather(*coleta)
+        batch_size = 10
         
+        coleta_result = []
+
+        links = [link for time_links in player_data[1].values() for link in time_links]
+        for i in range(0, len(links), batch_size):
+            batch = links[i:i + batch_size]
+            results = await asyncio.gather(*[get_players_cartoes_notas(await context.new_page(), link) for link in batch])
+            coleta_result.extend(results)
+        print(coleta_result)
+
         index = 0
         for time_id, jogadores in player_data[0].items():
-            for index, jogador in enumerate(jogadores, start=index):
-                jogador.update(coleta_result[index])
+            for jogador in jogadores:
+                if index < len(coleta_result): 
+                    jogador.update(coleta_result[index])
+                    index += 1  
         
         await browser.close()
+        
 
         #criação dos arquivos .json
         data_atual = datetime.now().strftime("%Y-%m-%d")
