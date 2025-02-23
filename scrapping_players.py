@@ -64,6 +64,7 @@ async def get_players(context):
     for t in range(q_times):
         time = await context.new_page()
         await time.goto("https://www.sofascore.com" + await times.nth(t).get_attribute("href"))
+        print(f"Acessando: {time.goto}")
 
         await time.wait_for_selector('label[for^="listTeamPlayers-"]') #exibe a lista de jogadores no site
         await time.click('label[for^="listTeamPlayers-"]')
@@ -96,7 +97,7 @@ async def get_players(context):
         await time.close()
     data = [player_data, player_links]
     mid = tempo.time()
-    print(f"Links dos jogadores coletados, iniciando coleta de dados de cada jogador. Tempo de execução : {mid - start_time}")
+    print(f"Links dos jogadores coletados, iniciando coleta de dados de cada jogador. Tempo de execução : {(mid - start_time)/60:.2f} minutos")
     return data
         
 
@@ -118,7 +119,7 @@ async def main():
             batch = links[i:i + batch_size]
             results = await asyncio.gather(*[get_players_cartoes_notas(await context.new_page(), link) for link in batch])
             coleta_result.extend(results)
-        print(coleta_result)
+        
 
         index = 0
         for time_id, jogadores in player_data[0].items():
@@ -143,8 +144,7 @@ async def main():
 
 
         end_time = tempo.time()
-        tempo_execução = (end_time - start_time) / 60
-        print(f"Tempo de execução: {tempo_execução:.2f} minutos")
+        print(f"Tempo de execução: {(end_time - start_time) / 60:.2f} minutos")
         print(f"Coleta de dados finalizada. Arquivos gerados: {player_data_file} | {player_links_file}")
 
 
