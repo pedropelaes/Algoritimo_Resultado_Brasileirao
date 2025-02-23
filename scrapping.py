@@ -60,8 +60,18 @@ with sync_playwright() as p:
             #cartões de cada jogador
             player_page = context.new_page()
             player_page.goto("https://www.sofascore.com" + link)
+
+            
             #buscar a div dos cartões
             try:
+                div_player_summary = player_page.get_by_test_id("player_summary")
+                if(div_player_summary.is_visible()):
+                    nota_element = div_player_summary.locator(".Text.jwYwht")
+                    nota = nota_element.text_content()
+                else:
+                    nota = "N/A"
+                print(nota)
+
                 div_estatisticas = player_page.locator("span:has-text('Estatísticas do jogador')").locator("..").locator("..").locator("..")
                 span_cartoes = div_estatisticas.locator("span:has-text('Cartões')").first
                 if(span_cartoes.is_visible()):
@@ -76,7 +86,7 @@ with sync_playwright() as p:
                     vermelhos = n_cartoes[2] if len(n_cartoes) > 2 else 0
 
                     amarelos += seg_amarelo
-                    
+                                   
                     #print(cartoes)
                 else:
                     amarelos = "N/A"
