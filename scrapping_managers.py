@@ -4,9 +4,11 @@ import json
 from datetime import datetime 
 import time as tempo
 start_time = tempo.time()
+import os
+import glob
 
-async def get_manager_info():
-    with open("teams_data_2025-02-20.json", "r", encoding="utf-8") as file:
+async def get_manager_info(arquivo_times):
+    with open(arquivo_times, "r", encoding="utf-8") as file:
         data = json.load(file)
         links = []
         team = []
@@ -34,10 +36,13 @@ async def get_manager_score(manager_page, link, time, nome):
         media = "N/A"
     return nome, media, time
     
+def get_team_json(folder):
+    padrao = os.path.join(folder, "teams_data_*.json")
+
 
 async def main():
     async with async_playwright() as p:
-        data = await get_manager_info()
+        data = await get_manager_info("Json_files")
         links = data[0]
         times = data[1]
         nomes = data[2]
@@ -58,7 +63,7 @@ async def main():
                 *[get_manager_score(await context.new_page(), link, time, nome) for link, time, nome in zip(batch_links, batch_times, batch_nomes)]
             )
             resultado.extend(results)
-        print(resultado)
+        #print(resultado)
         
         treinadores = {
             str(k): { "nome":nome, "nota":nota, "time":time}
@@ -72,7 +77,7 @@ async def main():
         json.dump(treinadores, dados_treinadores, indent=4, ensure_ascii=False)
 
     end_time = tempo.time()
-    print(f"Tempo de execução: {(end_time - start_time) / 60:.2f} minutos")
+    print(f"Tempo de execução: {(end_time - start_time):.2f} segundos")
     print(f"Coleta de dados finalizada. Arquivos gerados: {manager_data_file}")
 
 
