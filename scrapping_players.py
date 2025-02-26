@@ -148,6 +148,7 @@ async def main():
         print(f"Coleta de dados finalizada. Arquivos gerados: {player_data_file} | {player_links_file}")
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 
 

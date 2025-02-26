@@ -4,14 +4,7 @@ from datetime import datetime
 start_time = time.time()
 from playwright.sync_api import sync_playwright
 
-with sync_playwright() as p:
-    browser = p.chromium.launch()
-    
-    context = browser.new_context(
-    locale="jp-JP",  
-    geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}
-    )
-
+def get_teams(context):
     campeonato = context.new_page()
     campeonato.goto("https://www.sofascore.com/pt/torneio/futebol/brazil/brasileirao-serie-a/325")
 
@@ -62,23 +55,40 @@ with sync_playwright() as p:
             "link": link_times[q]
         }
     
+    campeonato.close()
+    return team_data, team_links
+    
         
 
-    campeonato.close()
-    browser.close()
 
-    
-#formatação dos arquivos json
-data_atual = datetime.now().strftime("%Y-%m-%d")
-team_data_file = f"teams_data_{data_atual}.json"
-team_links_file = f"team_links_{data_atual}.json"
+def main():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        
+        context = browser.new_context(
+        locale="jp-JP",  
+        geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}
+        )
 
-#gera arquivos json contendo as informações e links de cada jogador de cada time do campeonato
-with open(team_data_file, "w", encoding="utf-8") as dados_times:
-    json.dump(team_data, dados_times, indent=4, ensure_ascii=False)
-with open(team_links_file, "w", encoding="utf-8") as links_times:
-    json.dump(team_links, links_times, indent=4, ensure_ascii=False)
+        data = get_teams(context)
+        team_data = data[0]
+        team_links = data[1]
+        browser.close()
+        
+    #formatação dos arquivos json
+    data_atual = datetime.now().strftime("%Y-%m-%d")
+    team_data_file = f"teams_data_{data_atual}.json"
+    team_links_file = f"team_links_{data_atual}.json"
 
-end_time = time.time()
-print(f"Tempo de execução: {end_time - start_time:.2f} segundos")
-print(f"Coleta de dados finalizada. Arquivos gerados: {team_data_file} | {team_links_file}")
+    #gera arquivos json contendo as informações e links de cada jogador de cada time do campeonato
+    with open(team_data_file, "w", encoding="utf-8") as dados_times:
+        json.dump(team_data, dados_times, indent=4, ensure_ascii=False)
+    with open(team_links_file, "w", encoding="utf-8") as links_times:
+        json.dump(team_links, links_times, indent=4, ensure_ascii=False)
+
+    end_time = time.time()
+    print(f"Tempo de execução: {end_time - start_time:.2f} segundos")
+    print(f"Coleta de dados finalizada. Arquivos gerados: {team_data_file} | {team_links_file}")
+
+if __name__ == "__main__":
+    main()
