@@ -6,6 +6,7 @@ from datetime import datetime
 import time as tempo
 import random
 start_time = tempo.time()
+import os
 
 async def get_players_cartoes_notas(player_page, link):
     await asyncio.sleep(random.uniform(2,5))
@@ -101,7 +102,7 @@ async def get_players(context):
     return data
         
 
-async def main():
+async def main(folder):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
         context = await browser.new_context(
@@ -133,8 +134,8 @@ async def main():
 
         #criação dos arquivos .json
         data_atual = datetime.now().strftime("%Y-%m-%d")
-        player_data_file = f"player_data_{data_atual}.json"
-        player_links_file = f"plyer_links_{data_atual}.json"
+        player_data_file = os.path.join(folder, f"player_data_{data_atual}.json")
+        player_links_file = os.path.join(folder, f"plyer_links_{data_atual}.json")
 
         #gera arquivos json contendo as informações e links de cada jogador de cada time do campeonato
         with open(player_data_file, "w", encoding="utf-8") as dados_jogadores:

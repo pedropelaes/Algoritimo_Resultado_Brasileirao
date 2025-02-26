@@ -3,6 +3,7 @@ import json
 from datetime import datetime 
 start_time = time.time()
 from playwright.sync_api import sync_playwright
+import os
 
 def get_teams(context):
     campeonato = context.new_page()
@@ -61,7 +62,7 @@ def get_teams(context):
         
 
 
-def main():
+def main(folder):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         
@@ -75,10 +76,11 @@ def main():
         team_links = data[1]
         browser.close()
         
+    folder = str(folder)
     #formatação dos arquivos json
     data_atual = datetime.now().strftime("%Y-%m-%d")
-    team_data_file = f"teams_data_{data_atual}.json"
-    team_links_file = f"team_links_{data_atual}.json"
+    team_data_file = os.path.join(folder, f"teams_data_{data_atual}.json")
+    team_links_file = os.path.join(folder, f"team_links_{data_atual}.json")
 
     #gera arquivos json contendo as informações e links de cada jogador de cada time do campeonato
     with open(team_data_file, "w", encoding="utf-8") as dados_times:

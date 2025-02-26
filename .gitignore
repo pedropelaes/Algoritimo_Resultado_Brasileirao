@@ -1,1 +1,3 @@
 *.json
+Json_files
+__pycache__

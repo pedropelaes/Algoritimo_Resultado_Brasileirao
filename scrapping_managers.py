@@ -38,47 +38,54 @@ async def get_manager_score(manager_page, link, time, nome):
     
 def get_team_json(folder):
     padrao = os.path.join(folder, "teams_data_*.json")
+    files = glob.glob(padrao)
+    if not files:
+        return None
+    return max(files, key=os.path.getmtime)
 
+async def main(folder):
+    teams_file = get_team_json(folder)
+    if not teams_file:
+        print("ERROR: teams_data file was not found. Colect team data before manager data.")
+    else:
+        async with async_playwright() as p:
+            data = await get_manager_info(teams_file)
+            links = data[0]
+            times = data[1]
+            nomes = data[2]
+            browser = await p.chromium.launch(headless=True, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
+            context = await browser.new_context(
+                    locale="br_BR",  
+                    geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}, 
+                )#may need to be changed to run properly because of timeout errors
+            
+            resultado = []
+            batch_size = 10
+            for i in range(0, len(links), batch_size):
+                batch_links = links[i:i + batch_size]
+                batch_times = times[i:i + batch_size] 
+                batch_nomes = nomes[i:i + batch_size]
 
-async def main():
-    async with async_playwright() as p:
-        data = await get_manager_info("Json_files")
-        links = data[0]
-        times = data[1]
-        nomes = data[2]
-        browser = await p.chromium.launch(headless=True, slow_mo=100, args=["--disable-popup-blocking", "--new-window"])
-        context = await browser.new_context(
-                locale="br_BR",  
-                geolocation={"latitude": -33.86882, "longitude": 151.209296, "accuracy": 100}, 
-            )#may need to be changed to run properly because of timeout errors
-        
-        resultado = []
-        batch_size = 10
-        for i in range(0, len(links), batch_size):
-            batch_links = links[i:i + batch_size]
-            batch_times = times[i:i + batch_size] 
-            batch_nomes = nomes[i:i + batch_size]
+                results = await asyncio.gather(
+                    *[get_manager_score(await context.new_page(), link, time, nome) for link, time, nome in zip(batch_links, batch_times, batch_nomes)]
+                )
+                resultado.extend(results)
+            #print(resultado)
+            
+            treinadores = {
+                str(k): { "nome":nome, "nota":nota, "time":time}
+                for k, (nome, nota, time) in enumerate(resultado)
+            }
+        #criação dos arquivos .json
+        data_atual = datetime.now().strftime("%Y-%m-%d")
+        manager_data_file = os.path.join(folder, f"manager_{data_atual}.json")
 
-            results = await asyncio.gather(
-                *[get_manager_score(await context.new_page(), link, time, nome) for link, time, nome in zip(batch_links, batch_times, batch_nomes)]
-            )
-            resultado.extend(results)
-        #print(resultado)
-        
-        treinadores = {
-            str(k): { "nome":nome, "nota":nota, "time":time}
-            for k, (nome, nota, time) in enumerate(resultado)
-        }
-    #criação dos arquivos .json
-    data_atual = datetime.now().strftime("%Y-%m-%d")
-    manager_data_file = f"manager_{data_atual}.json"
+        with open(manager_data_file, "w", encoding="utf-8") as dados_treinadores:
+            json.dump(treinadores, dados_treinadores, indent=4, ensure_ascii=False)
 
-    with open(manager_data_file, "w", encoding="utf-8") as dados_treinadores:
-        json.dump(treinadores, dados_treinadores, indent=4, ensure_ascii=False)
-
-    end_time = tempo.time()
-    print(f"Tempo de execução: {(end_time - start_time):.2f} segundos")
-    print(f"Coleta de dados finalizada. Arquivos gerados: {manager_data_file}")
+        end_time = tempo.time()
+        print(f"Tempo de execução: {(end_time - start_time):.2f} segundos")
+        print(f"Coleta de dados finalizada. Arquivos gerados: {manager_data_file}")
 
 
 if __name__ == "__main__":
