@@ -1,6 +1,6 @@
-from scrapping_managers import main as managers
-from scrapping_times import main as times
-from scrapping_players import main as players
+from backend.scrapping_managers import main as managers
+from backend.scrapping_times import main as times
+from backend.scrapping_players import main as players
 import asyncio
 from pathlib import Path
 
