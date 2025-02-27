@@ -4,6 +4,12 @@ from scrapping_players import main as players
 import asyncio
 from pathlib import Path
 
+try: import playwright
+except ImportError:
+    import subprocess
+    subprocess.run(["pip", "install", "playwright"], check=True)
+    subprocess.run("playwright", "install", check = True)
+
 def check_Json_files_folder():
     path = Path.cwd() / "Json_files"
     try:

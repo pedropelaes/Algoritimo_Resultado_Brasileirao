@@ -1,0 +1,2 @@
+This program requires playwright python library, it should be installed automaticaly when the main program opens.
+Python may need to be added into PATH. 
