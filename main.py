@@ -1,14 +1,32 @@
+import subprocess
+import sys
+import os
+
+def is_pip_installed():
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+if not is_pip_installed():
+    print("pip not found. Installing pip...")
+    subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], check=True)
+
+pip_command = [sys.executable, "-m", "pip"]
+
+try:
+    import playwright
+except ImportError:
+    print("Playwright not found. Installing playwright...")
+    subprocess.run(pip_command + ["install", "playwright"], check=True)
+    subprocess.run([sys.executable, "-m", "playwright", "install"], check=True)
+
 from backend.scrapping_managers import main as managers
 from backend.scrapping_times import main as times
 from backend.scrapping_players import main as players
 import asyncio
 from pathlib import Path
-
-try: import playwright
-except ImportError:
-    import subprocess
-    subprocess.run(["pip", "install", "playwright"], check=True)
-    subprocess.run("playwright", "install", check = True)
 
 def check_Json_files_folder():
     path = Path.cwd() / "Json_files"
